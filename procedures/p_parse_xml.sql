@@ -260,11 +260,12 @@ BEGIN
     end if;
     
     -- lose non-significant whitespace.
-    if p_strip_empty_text != 0 then
-      select case count(*) when 1 then 0 else :v_node_type end 
-      ,      :v_node_id - count(*)
+    if p_strip_empty_text != 0 and v_node_type = TEXT_NODE then
+      select case count(*) when 1 then 0 else v_node_type end 
+      ,      v_node_id - count(*)
       into   v_node_type, v_node_id
-      from dummy where :v_token like_regexpr '^\s+$' flag RX_FLAG;
+      from dummy 
+      where replace_regexpr ('^\s+$' flag RX_FLAG in v_token with '') = '';
     end if;
     
     if v_node_type > 0 then
