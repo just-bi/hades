@@ -149,7 +149,7 @@ begin
         from       :tab_dom keyMapping
         inner join :tab_dom keyMapping_schemaName
         on         keyMapping.node_type = 1
-        and        keyMapping.node_name = 'keyMapping'
+        and        keyMapping.node_name in ('keyMapping', 'measureMapping')
         and        keyMapping.node_id = keyMapping_schemaName.parent_node_id
         and        2 = keyMapping_schemaName.node_type
         and        'schemaName' = keyMapping_schemaName.node_name
