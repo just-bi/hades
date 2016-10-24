@@ -17,13 +17,13 @@ drop PROCEDURE p_get_view_basecols;
 /**
 * PROCEDURE p_get_view_basecols
 * 
-* Lists base columns (database table/view columns) on which a analytical, attribute or calculation views depend.
+* Lists base columns (database table/view columns) on which a analytic, attribute or calculation views depend.
 *
 * This procedure works by using the package_id, object_name and object_suffix (passed as arguments) 
-* to select analytical, attribute, and calculation views from _SYS_REPO.ACTIVE_OBJECT.
+* to select analytic, attribute, and calculation views from _SYS_REPO.ACTIVE_OBJECT.
 * 
 * (If the recursive flag is non-zero, then the list of selected items is expanded using a query on OBJECT_DEPENDENCIES,
-* to look again in _SYS_REPO.ACTIVE_OBJECT for any analytical, attribute and calculation views used by the selected objects.)
+* to look again in _SYS_REPO.ACTIVE_OBJECT for any analytic, attribute and calculation views used by the selected objects.)
 *
 * From _SYS_REPO.ACTIVE_OBJECT the contents of the cdata column are examined. 
 * This contains a xml document (as nlcob) which contains the view definition.
@@ -34,13 +34,13 @@ drop PROCEDURE p_get_view_basecols;
 * 
 */
 create PROCEDURE p_get_view_basecols (
-  -- package name pattern. Used to match packages containing analytical, attribute or calculation views. Can contain LIKE wildcards.
+  -- package name pattern. Used to match packages containing analytic, attribute or calculation views. Can contain LIKE wildcards.
   p_package_id    nvarchar(255)
-  -- object name pattern. Used to match name of analytical, attribute or calculation views. Can contain LIKE wildcards.
+  -- object name pattern. Used to match name of analytic, attribute or calculation views. Can contain LIKE wildcards.
 , p_object_name   nvarchar(255) default '%'
   -- object suffix pattern. Can be used to specify the type of view. Can contain LIKE wildcards.
 , p_object_suffix nvarchar(255) default '%'
-  -- flag to indicate whether to recursively analyze analytical, attribute or calculation views on which the view to be analyzed depends. 
+  -- flag to indicate whether to recursively analyze analytic, attribute or calculation views on which the view to be analyzed depends. 
   -- 0 means only look at the given view, 1 means also look at underlying views.
 , p_recursive     tinyint default 1
   -- result table: base columns on which the specified view(s) depends.
@@ -96,7 +96,7 @@ begin
       and     object_name like :p_object_name
       and     object_suffix like :p_object_suffix
       and     object_suffix in (
-                'analyticalview'
+                'analyticview'
               , 'attributeview'
               , 'calculationview'
               )
@@ -121,7 +121,7 @@ begin
       on          substr_before(od.base_object_name, '/') = ao.package_id
       and         substr_after(od.base_object_name, '/') = ao.object_name
       and         ao.object_suffix in (
-                    'analyticalview'
+                    'analyticview'
                   , 'attributeview'
                   , 'calculationview'
                   )
@@ -162,7 +162,7 @@ begin
         and        2 = keyMapping_columnName.node_type
         and        'columnName' = keyMapping_columnName.node_name
         where      :v_object_suffix in (
-                     'analyticalview'
+                     'analyticview'
                    , 'attributeview'
                    )
         union all
