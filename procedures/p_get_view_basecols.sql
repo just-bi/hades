@@ -1,6 +1,5 @@
 /**
 * Copyright 2016 Roland Bouman, Just-Bi.nl
-*                Glenn Cheung, Just-Bi.nl   
 * 
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -88,37 +87,45 @@ begin
   );
   
   declare cursor c_views for
-    with top_level_views as (
-      select  package_id
-      ,       object_name
-      ,       object_suffix
-      from    "_SYS_REPO"."ACTIVE_OBJECT"
-      where   package_id like :p_package_id
-      and     object_name like :p_object_name
-      and     object_suffix like :p_object_suffix
-      and     object_suffix in (
-                'analyticview'
-              , 'attributeview'
-              , 'calculationview'
-              )
-      )
-    , top_level_and_base_views as (
-      select     tv.package_id
-      ,          tv.object_name
-      ,          tv.object_suffix
-      from       top_level_views tv
-      union
+    with params as (
+      select  :p_package_id    as p_package_id
+      ,       :p_object_name   as p_object_name
+      ,       :p_object_suffix as p_object_suffix
+      ,       :p_recursive     as p_recursive
+      from    dummy
+    )
+    , top_level_views as (
       select     ao.package_id
       ,          ao.object_name
       ,          ao.object_suffix
-      from       top_level_views     tv
-      inner join object_dependencies od
-      on         tv.package_id||'/'||tv.object_name = od.dependent_object_name
-      and        '_SYS_BIC'                         = od.dependent_schema_name
-      and        'VIEW'                             = od.dependent_object_type
-      and        '_SYS_BIC'                         = od.base_schema_name
-      and        'VIEW'                             = od.base_object_type
-      inner join _SYS_REPO.ACTIVE_OBJECT ao
+      from       params p
+      inner join  "_SYS_REPO"."ACTIVE_OBJECT" ao
+      on          ao.package_id    like p.p_package_id
+      and         ao.object_name   like p.p_object_name
+      and         ao.object_suffix like p.p_object_suffix
+      where       ao.object_suffix in (
+                    'analyticview'
+                  , 'attributeview'
+                  , 'calculationview'
+                  )
+    )
+    , top_level_and_base_views as (
+      select      tv.package_id
+      ,           tv.object_name
+      ,           tv.object_suffix
+      from        top_level_views tv
+      union
+      select      ao.package_id
+      ,           ao.object_name
+      ,           ao.object_suffix
+      from        top_level_views     tv
+      inner join  object_dependencies od
+      on          tv.package_id||'/'||tv.object_name = od.dependent_object_name
+      and         '_SYS_BIC'                         = od.dependent_schema_name
+      and         'VIEW'                             = od.dependent_object_type
+      and         '_SYS_BIC'                         = od.base_schema_name
+      and         'VIEW'                             = od.base_object_type
+      inner join  _SYS_REPO.ACTIVE_OBJECT ao
       on          substr_before(od.base_object_name, '/') = ao.package_id
       and         substr_after(od.base_object_name, '/') = ao.object_name
       and         ao.object_suffix in (
@@ -126,17 +133,38 @@ begin
                   , 'attributeview'
                   , 'calculationview'
                   )
-      where       :p_recursive = 1
-      )
-      select      v.package_id
-      ,           v.object_name
-      ,           v.object_suffix
-      ,           v.cdata
-      from        top_level_and_base_views tbv
-      inner join  _SYS_REPO.ACTIVE_OBJECT  v
-      on          tbv.package_id    = v.package_id
-      and         tbv.object_name   = v.object_name
-      and         tbv.object_suffix = v.object_suffix    
+      where       (
+                    select p_recursive
+                    from   params
+                  ) != 0
+      union 
+      select      cr.to_package_id
+      ,           cr.to_object_name
+      ,           cr.to_object_suffix
+      from        top_level_views                  tv
+      inner join  _SYS_REPO.ACTIVE_OBJECTCROSSREF  cr
+      on          tv.package_id      = cr.from_package_id
+      and         tv.object_name     = cr.from_object_name
+      and         tv.object_suffix   = cr.from_object_suffix
+      and         cr.to_object_suffix in (
+                    'analyticview'
+                  , 'attributeview'
+                  , 'calculationview'
+                  )
+      where       (
+                    select p_recursive
+                    from   params
+                  ) != 0
+    )
+    select      v.package_id
+    ,           v.object_name
+    ,           v.object_suffix
+    ,           v.cdata
+    from        top_level_and_base_views tbv
+    inner join  _SYS_REPO.ACTIVE_OBJECT  v
+    on          tbv.package_id    = v.package_id
+    and         tbv.object_name   = v.object_name
+    and         tbv.object_suffix = v.object_suffix    
     ;
 
   for r_view as c_views do
