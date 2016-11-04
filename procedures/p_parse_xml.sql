@@ -48,6 +48,7 @@ create PROCEDURE p_parse_xml (
 ) 
 LANGUAGE SQLSCRIPT
 SQL SECURITY INVOKER 
+READS SQL DATA
 AS
 BEGIN
   -- default regexp flag: s: . includes newline; m: ^ and $ match start/end of input (not of line)

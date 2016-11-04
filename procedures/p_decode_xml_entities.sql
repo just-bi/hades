@@ -44,6 +44,7 @@ create PROCEDURE p_decode_xml_entities (
 ) 
 LANGUAGE SQLSCRIPT
 SQL SECURITY INVOKER
+READS SQL DATA
 as 
 BEGIN
   declare i integer default 1;

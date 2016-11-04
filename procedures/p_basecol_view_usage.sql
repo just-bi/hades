@@ -60,6 +60,7 @@ create procedure p_basecol_view_usage(
 )
 language sqlscript
 sql security invoker
+reads sql data
 as
 begin
   declare tab_cols table (
