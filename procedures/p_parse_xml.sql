@@ -1,38 +1,37 @@
-/**
-* Copyright 2016 Roland Bouman, Just-Bi.nl
-* 
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-* 
-*     http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+--
+-- Copyright 2016 Roland Bouman, Just-Bi.nl
+-- 
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+-- 
+--     http://www.apache.org/licenses/LICENSE-2.0
+-- 
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 drop PROCEDURE p_parse_xml
 ;
-/**
-* Parses xml and returns a dom like parse tree as a table variable. 
-*
-* Primary use case of this procedure is parsing model XML stored in the _SYS_REPO.ACTIVE_OBJECT table.
-* XML definitions of analytical, attribute and calculation views is stored here.
-* This procedure offers at least some kind of way to inspect and query the contents of these views.
-* (Since SAP HANA system views and tools like HANA studio offer only limited facilities for tracking and managing dependecies of these types of views)
-*
-* With the primary use case in mind, please note that this is not a fully featured xml parser.
-* A non-exhaustive list of limitations follows below: 
-* - It does not do any actual error checking - not even a well-formedness check, let alone validation.
-* - There is no support for namespaces (that is, element and attributes are returned as is without checking or parsing namespace uri or prefix.
-* - There is no resolving of external entities. Only basic entity replacement is performed using p_decode_xml_entities.
-* - It is quite slow.
-*
-* However, it does keep track of the tree structure, provided a well-formed xml document is passed.
-*
-*/
+--
+-- Parses xml and returns a dom like parse tree as a table variable. 
+--
+-- Primary use case of this procedure is parsing model XML stored in the _SYS_REPO.ACTIVE_OBJECT table.
+-- XML definitions of analytical, attribute and calculation views is stored here.
+-- This procedure offers at least some kind of way to inspect and query the contents of these views.
+-- (Since SAP HANA system views and tools like HANA studio offer only limited facilities for tracking and managing dependecies of these types of views)
+--
+-- With the primary use case in mind, please note that this is not a fully featured xml parser.
+-- A non-exhaustive list of limitations follows below: 
+-- - It does not do any actual error checking - not even a well-formedness check, let alone validation.
+-- - There is no support for namespaces (that is, element and attributes are returned as is without checking or parsing namespace uri or prefix.
+-- - There is no resolving of external entities. Only basic entity replacement is performed using p_decode_xml_entities.
+-- - It is quite slow.
+--
+-- However, it does keep track of the tree structure, provided a well-formed xml document is passed.
+--
 create PROCEDURE p_parse_xml (
   p_xml nclob
 , out p_dom table (

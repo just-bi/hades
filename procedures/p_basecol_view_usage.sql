@@ -1,37 +1,36 @@
-/**
-* Copyright 2016 Roland Bouman, Just-Bi.nl
-* 
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-* 
-*     http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+--
+-- Copyright 2016 Roland Bouman, Just-Bi.nl
+-- 
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+-- 
+--     http://www.apache.org/licenses/LICENSE-2.0
+-- 
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 drop PROCEDURE p_basecol_view_usage;
-/**
-* PROCEDURE p_basecol_view_usage
-* 
-* Lists base columns on which a analytic, attribute or calculation views depend.
-*
-* This procedure works by using the schema_name, table_name 
-* to select analytic, attribute, and calculation views from OBJECT_DEPENDENCIES.
-* 
-* (If the recursive flag is non-zero, then it will also look for indirect dependenies)
-*
-* The dependencies found inOBJECT_DEPENDENCIES are used to lookup the model of the views
-* from the cdata column of _SYS_REPO.ACTIVE_OBJECT.
-* This contains a xml document (as nlcob) which contains the view definition.
-* This is parsed using p_parse_xml, after which the resulting table of DOM nodes is queried.
-*
-* The XML parse tree is then examined to look for column usages 
-* 
-*/
+--
+-- PROCEDURE p_basecol_view_usage
+-- 
+-- Lists base columns on which a analytic, attribute or calculation views depend.
+--
+-- This procedure works by using the schema_name, table_name 
+-- to select analytic, attribute, and calculation views from OBJECT_DEPENDENCIES.
+-- 
+-- (If the recursive flag is non-zero, then it will also look for indirect dependenies)
+--
+-- The dependencies found inOBJECT_DEPENDENCIES are used to lookup the model of the views
+-- from the cdata column of _SYS_REPO.ACTIVE_OBJECT.
+-- This contains a xml document (as nlcob) which contains the view definition.
+-- This is parsed using p_parse_xml, after which the resulting table of DOM nodes is queried.
+--
+-- The XML parse tree is then examined to look for column usages 
+-- 
 create procedure p_basecol_view_usage(
   -- schema name LIKE pattern to look for.
   p_schema_name     nvarchar(128)
@@ -121,7 +120,7 @@ begin
       ,        column_name
       ,        string_agg(views, ', ') views
       from    (
-        select  * 
+        select  *
         from    :tab_cols  tc
         where   tc.schema_name like p_schema_name
         and     tc.table_name  like p_table_name

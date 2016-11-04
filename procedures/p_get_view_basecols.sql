@@ -1,40 +1,39 @@
-/**
-* Copyright 2016 Roland Bouman,
-*                Glenn Cheung,
-*                Just-Bi.nl
-* 
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-* 
-*     http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+--
+-- Copyright 2016 Roland Bouman,
+--                Glenn Cheung,
+--                Just-Bi.nl
+-- 
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+-- 
+--     http://www.apache.org/licenses/LICENSE-2.0
+-- 
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 drop PROCEDURE p_get_view_basecols;
-/**
-* PROCEDURE p_get_view_basecols
-* 
-* Lists base columns (database table/view columns) on which a analytic, attribute or calculation views depend.
-*
-* This procedure works by using the package_id, object_name and object_suffix (passed as arguments) 
-* to select analytic, attribute, and calculation views from _SYS_REPO.ACTIVE_OBJECT.
-* 
-* (If the recursive flag is non-zero, then the list of selected items is expanded using a query on OBJECT_DEPENDENCIES,
-* to look again in _SYS_REPO.ACTIVE_OBJECT for any analytic, attribute and calculation views used by the selected objects.)
-*
-* From _SYS_REPO.ACTIVE_OBJECT the contents of the cdata column are examined. 
-* This contains a xml document (as nlcob) which contains the view definition.
-* This is parsed using p_parse_xml, after which the resulting table of DOM nodes is queried.
-*
-* This procedure only determines whether the base column is referenced by the views.
-* If a base column is referenced, but not used in any way later on in the dataflow of the view, then it will still be reproted.
-* 
-*/
+--
+-- PROCEDURE p_get_view_basecols
+-- 
+-- Lists base columns (database table/view columns) on which a analytic, attribute or calculation views depend.
+--
+-- This procedure works by using the package_id, object_name and object_suffix (passed as arguments) 
+-- to select analytic, attribute, and calculation views from _SYS_REPO.ACTIVE_OBJECT.
+-- 
+-- (If the recursive flag is non-zero, then the list of selected items is expanded using a query on OBJECT_DEPENDENCIES,
+-- to look again in _SYS_REPO.ACTIVE_OBJECT for any analytic, attribute and calculation views used by the selected objects.)
+--
+-- From _SYS_REPO.ACTIVE_OBJECT the contents of the cdata column are examined. 
+-- This contains a xml document (as nlcob) which contains the view definition.
+-- This is parsed using p_parse_xml, after which the resulting table of DOM nodes is queried.
+--
+-- This procedure only determines whether the base column is referenced by the views.
+-- If a base column is referenced, but not used in any way later on in the dataflow of the view, then it will still be reproted.
+-- 
 create PROCEDURE p_get_view_basecols (
   -- package name pattern. Used to match packages containing analytic, attribute or calculation views. Can contain LIKE wildcards.
   p_package_id    nvarchar(255)
