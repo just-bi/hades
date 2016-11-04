@@ -58,6 +58,7 @@ create PROCEDURE p_get_view_basecols (
 )
 language sqlscript
 sql security invoker
+reads sql data
 as
 begin
   declare v_row_num integer default 0;
