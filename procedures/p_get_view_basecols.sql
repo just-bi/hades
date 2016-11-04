@@ -75,7 +75,6 @@ begin
   , node_type         tinyint       
   , node_name         nvarchar(64)  
   , node_value        nclob         
-  , token_text        nclob         
   , pos               int           
   , len               int           
   );
