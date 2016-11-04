@@ -1,43 +1,43 @@
-/**
-* Copyright 2016 Roland Bouman, Just-Bi.nl
-* 
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-* 
-*     http://www.apache.org/licenses/LICENSE-2.0
-* 
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+--
+-- Copyright 2016 Roland Bouman, Just-Bi.nl
+-- 
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+-- 
+--     http://www.apache.org/licenses/LICENSE-2.0
+-- 
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 drop PROCEDURE p_decode_xml_entities
 ;
-/**
-* Replaces xml entities into text.
-* This procedure is a helper of p_parse_xml.
-*
-* It replaces xml entities passed into the p_encoded_text IN parameter with their text equivalents
-* and returns the result in the p_decoded_text OUT parameter.
-*
-* The following types of entities are handled by this procedure:
-* - standard named entities: 
-*     &amp;  becomes &
-*     &apos; becomes '
-*     &gt;   becomes >
-*     &lt;   becomes <
-*     &quot; becomes "
-* - decimal character references: 
-*     &#65;  becomes A
-* - hexadecimal character references: 
-*     &#x41; becomes A
-*
-* Ideally, this should have been written as a scalar function 
-* that accepts one parameter and returns the result
-* but currently SAP/HANA does not allow nclob parameters.
-*/
+--
+-- Replaces xml entities into text.
+-- This procedure is a helper of p_parse_xml.
+--
+-- It replaces xml entities passed into the p_encoded_text IN parameter with their text equivalents
+-- and returns the result in the p_decoded_text OUT parameter.
+--
+-- The following types of entities are handled by this procedure:
+-- - standard named entities: 
+--     &amp;  becomes &
+--     &apos; becomes '
+--     &gt;   becomes >
+--     &lt;   becomes <
+--     &quot; becomes "
+-- - decimal character references: 
+--     &#65;  becomes A
+-- - hexadecimal character references: 
+--     &#x41; becomes A
+--
+-- Ideally, this should have been written as a scalar function 
+-- that accepts one parameter and returns the result
+-- but currently SAP/HANA does not allow nclob parameters.
+--
 create PROCEDURE p_decode_xml_entities ( 
   IN p_encoded_text nclob  -- text containing xml entities
 , OUT p_decoded_text nclob -- text but with xml entities replaced by text 
