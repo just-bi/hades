@@ -40,7 +40,6 @@ create PROCEDURE p_parse_xml (
   , node_type         tinyint       -- dom node type constant: 1=element, 2=attribute, 3=text, 4=cdata, 5=entityref, 6=entity, 7=processing instruction, 8=comment, 9=document, 10=document type, 11=document fragment, 12=notation
   , node_name         nvarchar(64)  -- dom node name: tagname for element, attribute name for attribute, target for processing instruction, document type name for document type, "#text" for text and cdata, "#comment" for comment, "#document" for document, "#document-fragment" for document fragment. 
   , node_value        nclob         -- dom node value: text for text, comment, and cdata nodes, data for processing instruction node, null otherwise.
-  , token_text        nclob         -- token
   , pos               int           -- character position of token
   , len               int           -- lenght of token.
   )
@@ -48,7 +47,7 @@ create PROCEDURE p_parse_xml (
 ) 
 LANGUAGE SQLSCRIPT
 SQL SECURITY INVOKER 
-READS SQL DATA
+reads sql data
 AS
 BEGIN
   -- default regexp flag: s: . includes newline; m: ^ and $ match start/end of input (not of line)
@@ -177,7 +176,6 @@ BEGIN
   declare v_node_types tinyint array;
   declare v_node_names nvarchar(64) array;
   declare v_node_values nclob array;
-  declare v_token_texts nclob array;
   declare v_positions integer array;
   declare v_lengths integer array;
   
@@ -191,7 +189,6 @@ BEGIN
   v_node_types[v_row_num] = DOCUMENT_NODE;
   v_node_names[v_row_num] = '#document';
   v_node_values[v_row_num] = null;
-  v_token_texts[v_row_num] = null;
   v_positions[v_row_num] = 1;
   v_lengths[v_row_num] = v_end;
   
@@ -253,7 +250,7 @@ BEGIN
     else
       v_node_type = TEXT_NODE;
       v_node_name = '#text';
-      call p_decode_xml_entities(
+      call p_decode_xml_entities2(
         v_token
       , v_node_value
       );
@@ -276,7 +273,6 @@ BEGIN
       v_node_types[v_row_num] = v_node_type;
       v_node_names[v_row_num] = v_node_name;
       v_node_values[v_row_num] = v_node_value;
-      v_token_texts[v_row_num] = v_token;
       v_positions[v_row_num] = v_index;
       v_lengths[v_row_num] = v_length;
       
@@ -286,22 +282,23 @@ BEGIN
         v_atts_end = length(v_atts);
         
         while v_atts_index < v_atts_end do
-          select  substr_regexpr(RX_ATT flag RX_FLAG in v_atts from v_atts_index group 1)
-          ,       substr_regexpr(RX_ATT flag RX_FLAG in v_atts from v_atts_index group 2)
+          select  substr_regexpr(RX_ATT flag RX_FLAG in v_atts from v_atts_index group 2)
           ,       substr_regexpr(RX_ATT flag RX_FLAG in v_atts from v_atts_index group 4)
-          into    v_att, v_att_name, v_att_value
+          into    v_att_name, v_att_value
           from    dummy;
           v_atts_length = length(v_att);
        
-          if v_att is null then
+          if v_att_name is null then
             signal sql_error_code 10000
             set message_text = 'No attribute found in '||v_atts||' at index '||cast(v_atts_index as varchar(12));
           else
             v_node_id = v_node_id + 1;
-            call p_decode_xml_entities(
+
+            call p_decode_xml_entities2(
               substr(v_att_value, 2, length(v_att_value) - 2)
             , v_att_value 
             );
+            
             v_row_num = v_row_num + 1;
             
             v_node_ids[v_row_num] = v_node_id;
@@ -309,17 +306,13 @@ BEGIN
             v_node_types[v_row_num] = ATTRIBUTE_NODE;
             v_node_names[v_row_num] = v_att_name;
             v_node_values[v_row_num] = v_att_value;
-            v_token_texts[v_row_num] = v_att;
             v_positions[v_row_num] = v_index + v_atts_index;
             v_lengths[v_row_num] = v_atts_length;
           end if;
-                    
           v_atts_index = v_atts_index + v_atts_length;
-        end while;      
-        
+        end while;        
       end if;      
     end if;
-    
     v_index = v_index + v_length;
 
   end while;
@@ -329,7 +322,6 @@ BEGIN
   , :v_node_types
   , :v_node_names
   , :v_node_values
-  , :v_token_texts
   , :v_positions
   , :v_lengths
   ) as dom (
@@ -338,7 +330,6 @@ BEGIN
   , node_type
   , node_name
   , node_value
-  , token_text
   , pos
   , len
   );
