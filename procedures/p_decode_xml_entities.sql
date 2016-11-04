@@ -51,21 +51,33 @@ BEGIN
   declare n integer default length(p_encoded_text);
   declare v_from_position integer;
   declare v_to_position integer;
+  declare v_encoded_text nclob default p_encoded_text;
   declare v_text nclob default '';
   declare v_token nvarchar(12);
   
+  v_encoded_text = 
+    replace(
+      replace(
+        replace(
+          replace(v_encoded_text, 
+            '&gt;', '>')
+          , '&lt;', '<')
+          , '&quot;', '"')
+          , '&apos;', '''')
+  ;
+  
   while i <= n do
-    select  locate_regexpr('&(amp|apos|lt|gt|quot|#(\d+|[xX]?[\dA-Za-z]+));' in p_encoded_text from i)
+    select  locate_regexpr('&(#(\d+|[xX]?[\dA-Za-z]+));' in v_encoded_text from i)
     into    v_from_position
     from    dummy
     ;
     if v_from_position = 0 then
-      v_text = v_text || substr(p_encoded_text, i);
+      v_text = v_text || substr(v_encoded_text, i);
       i = n + 1;
     else
-      v_text = v_text || substr(p_encoded_text, i, v_from_position - i);
-      v_to_position = locate(p_encoded_text, ';', i);
-      v_token = substr(p_encoded_text, v_from_position + 1, v_to_position - v_from_position - 1);
+      v_text = v_text || substr(v_encoded_text, i, v_from_position - i);
+      v_to_position = locate(v_encoded_text, ';', i);
+      v_token = substr(v_encoded_text, v_from_position + 1, v_to_position - v_from_position - 1);
       if substr(v_token, 1, 1) = '#' then
         if substr(v_token, 2, 1) = 'x' then 
           v_text = v_text || bintostr(hextobin(substr(v_token, 3)));
@@ -91,5 +103,6 @@ BEGIN
     ; 
   end while
   ;
+  v_text = replace(v_text, '&amp;', '&');
   p_decoded_text = v_text;
 END;
