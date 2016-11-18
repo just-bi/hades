@@ -250,7 +250,7 @@ BEGIN
     else
       v_node_type = TEXT_NODE;
       v_node_name = '#text';
-      call p_decode_xml_entities2(
+      call p_decode_xml_entities(
         v_token
       , v_node_value
       );
@@ -282,9 +282,10 @@ BEGIN
         v_atts_end = length(v_atts);
         
         while v_atts_index < v_atts_end do
-          select  substr_regexpr(RX_ATT flag RX_FLAG in v_atts from v_atts_index group 2)
+          select  substr_regexpr(RX_ATT flag RX_FLAG in v_atts from v_atts_index group 1)
+          ,       substr_regexpr(RX_ATT flag RX_FLAG in v_atts from v_atts_index group 2)
           ,       substr_regexpr(RX_ATT flag RX_FLAG in v_atts from v_atts_index group 4)
-          into    v_att_name, v_att_value
+          into    v_att, v_att_name, v_att_value
           from    dummy;
           v_atts_length = length(v_att);
        
