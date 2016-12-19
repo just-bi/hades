@@ -69,6 +69,7 @@ begin
   declare v_column_names nvarchar(128) array;
   declare v_object_suffix nvarchar(255);
 
+  declare v_error_count integer default 0;
   declare tab_dom table(
     node_id           int           
   , parent_node_id    int           
@@ -77,6 +78,13 @@ begin
   , node_value        nclob         
   , pos               int           
   , len               int           
+  );
+  
+  declare tab_error table (
+    error_code        int
+  , error_message     nvarchar(255)
+  , position          int
+  , node_name         nvarchar(64)
   );
   
   declare cols table (
@@ -170,12 +178,59 @@ begin
 
   for r_view as c_views do
     v_object_suffix = r_view.object_suffix;
-    call p_parse_xml(r_view.cdata, tab_dom);
+    call p_parse_xml(r_view.cdata, tab_dom, tab_error);
+
+    select count(*) 
+    into   v_error_count 
+    from :tab_error
+    ;
+    if v_error_count != 0 then
+      select * from :tab_dom;
+      select * from :tab_error;
+      signal sql_error_code 10000 
+        set message_text = 'Error parsing '
+        ||r_view.object_suffix
+        ||' '||r_view.object_name
+        ||' in package '||r_view.package_id
+        ||'.'
+        ;
+    end if;
+
     begin
       declare cursor c_deps for 
+        with calcview_base_table_datasource as (
+          select     cast(ds_id.node_value as nvarchar(128))                  as id
+          ,          cast(ds_co_schemaName.node_value as nvarchar(128))       as schema_name
+          ,          cast(ds_co_columnObjectName.node_value as nvarchar(128)) as table_name
+          from       :tab_dom ds
+          inner join :tab_dom ds_type
+          on         ds.node_type = 1
+          and        ds.node_name = 'DataSource'
+          and        ds.node_id = ds_type.parent_node_id
+          and        2 = ds_type.node_type
+          and        'type' = ds_type.node_name
+          and        'DATA_BASE_TABLE' = cast(ds_type.node_value as varchar(128))
+          inner join :tab_dom ds_id
+          on         ds.node_id = ds_id.parent_node_id
+          and        2 = ds_id.node_type
+          and        'id' = ds_id.node_name
+          inner join :tab_dom ds_co
+          on         ds.node_id = ds_co.parent_node_id
+          and        1 = ds_co.node_type
+          and        'columnObject' = ds_co.node_name
+          inner join :tab_dom ds_co_schemaName
+          on         ds_co.node_id = ds_co_schemaName.parent_node_id
+          and        2 = ds_co_schemaName.node_type
+          and        'schemaName' = ds_co_schemaName.node_name
+          inner join :tab_dom ds_co_columnObjectName
+          on         ds_co.node_id = ds_co_columnObjectName.parent_node_id
+          and        2 = ds_co_columnObjectName.node_type
+          and        'columnObjectName' = ds_co_columnObjectName.node_name
+          where      :v_object_suffix = 'calculationview'
+        )
         select     keyMapping_schemaName.node_value         schema_name
         ,          keyMapping_columnObjectName.node_value   table_name
-        ,          keyMapping_columnName.node_value         column_name
+        ,          cast(keyMapping_columnName.node_value as nvarchar(128)) column_name
         from       :tab_dom keyMapping
         inner join :tab_dom keyMapping_schemaName
         on         keyMapping.node_type = 1
@@ -196,37 +251,14 @@ begin
                    , 'attributeview'
                    )
         union all
-        select     ds_co_schemaName.node_value              schema_name
-        ,          ds_co_columnObjectName.node_value        table_name
-        ,          cv_input_mapping_source.node_value       column_name
-        from       :tab_dom ds
-        inner join :tab_dom ds_type
-        on         ds.node_type = 1
-        and        ds.node_name = 'DataSource'
-        and        ds.node_id = ds_type.parent_node_id
-        and        2 = ds_type.node_type
-        and        'type' = ds_type.node_name
-        and        'DATA_BASE_TABLE' = cast(ds_type.node_value as varchar(128))
-        inner join :tab_dom ds_id
-        on         ds.node_id = ds_id.parent_node_id
-        and        2 = ds_id.node_type
-        and        'id' = ds_id.node_name
-        inner join :tab_dom ds_co
-        on         ds.node_id = ds_co.parent_node_id
-        and        1 = ds_co.node_type
-        and        'columnObject' = ds_co.node_name
-        inner join :tab_dom ds_co_schemaName
-        on         ds_co.node_id = ds_co_schemaName.parent_node_id
-        and        2 = ds_co_schemaName.node_type
-        and        'schemaName' = ds_co_schemaName.node_name
-        inner join :tab_dom ds_co_columnObjectName
-        on         ds_co.node_id = ds_co_columnObjectName.parent_node_id
-        and        2 = ds_co_columnObjectName.node_type
-        and        'columnObjectName' = ds_co_columnObjectName.node_name
+        select     ds.schema_name
+        ,          ds.table_name
+        ,          cast(cv_input_mapping_source.node_value as nvarchar(128)) column_name
+        from       calcview_base_table_datasource           ds
         inner join :tab_dom cv_input_node
         on         'node' = cv_input_node.node_name
         and        2 = cv_input_node.node_type
-        and        '#'||ds_id.node_value = cast(cv_input_node.node_value as nvarchar(128))
+        and        '#'||ds.id = cast(cv_input_node.node_value as nvarchar(128))
         inner join :tab_dom cv_input_mapping
         on         'mapping' = cv_input_mapping.node_name
         and        1 = cv_input_mapping.node_type
@@ -235,7 +267,19 @@ begin
         on         'source' = cv_input_mapping_source.node_name
         and        2 = cv_input_mapping_source.node_type
         and        cv_input_mapping.node_id = cv_input_mapping_source.parent_node_id
-        where      :v_object_suffix = 'calculationview'
+        union all
+        select     ds.schema_name
+        ,          ds.table_name
+        ,          cast(km_columnName.node_value as nvarchar(128)) column_name
+        from       calcview_base_table_datasource           ds
+        inner join :tab_dom                                 km_columnObjectName
+        on         ds.id                                  = cast(km_columnObjectName.node_value as nvarchar(128))
+        and        'columnObjectName'                     = km_columnObjectName.node_name
+        and        2                                      = km_columnObjectName.node_type
+        inner join :tab_dom                                 km_columnName
+        on         km_columnObjectName.parent_node_id     = km_columnName.parent_node_id
+        and        'columnName'                           = km_columnName.node_name
+        and        2                                      = km_columnName.node_type
       ;
       for r_deps as c_deps do
         v_row_num = v_row_num + 1;
@@ -262,7 +306,6 @@ begin
   , table_name
   , column_name
   );
-  
   p_cols = select   
            schema_name
   ,        table_name
