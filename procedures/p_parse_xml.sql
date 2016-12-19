@@ -295,7 +295,7 @@ BEGIN
           else
             v_node_id = v_node_id + 1;
 
-            call p_decode_xml_entities2(
+            call p_decode_xml_entities(
               substr(v_att_value, 2, length(v_att_value) - 2)
             , v_att_value 
             );
