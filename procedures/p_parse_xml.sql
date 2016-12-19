@@ -43,6 +43,12 @@ create PROCEDURE p_parse_xml (
   , pos               int           -- character position of token
   , len               int           -- lenght of token.
   )
+, out p_error table (
+    error_code        int
+  , error_message     nvarchar(255)
+  , position          int
+  , node_name         nvarchar(64)
+  )
 , p_strip_empty_text  tinyint default 1
 ) 
 LANGUAGE SQLSCRIPT
@@ -180,8 +186,32 @@ BEGIN
   declare v_lengths integer array;
   
   declare exit handler for sqlexception
-    select ::SQL_ERROR_CODE, ::SQL_ERROR_MESSAGE, v_index, v_node_name from dummy;
-  
+    begin
+      p_error = select 
+        ::SQL_ERROR_CODE    error_code
+      , ::SQL_ERROR_MESSAGE error_message
+      , v_index             position
+      , v_node_name         node_name
+      from dummy;
+      p_dom = unnest(
+        :v_node_ids
+      , :v_parent_node_ids
+      , :v_node_types
+      , :v_node_names
+      , :v_node_values
+      , :v_positions
+      , :v_lengths
+      ) as dom (
+        node_id
+      , parent_node_id
+      , node_type
+      , node_name
+      , node_value
+      , pos
+      , len
+      );
+    end;
+    
   v_element_stack[v_row_num] = v_node_id;
   
   v_node_ids[v_row_num] = v_node_id;
@@ -315,8 +345,8 @@ BEGIN
       end if;      
     end if;
     v_index = v_index + v_length;
-
   end while;
+  
   p_dom = unnest(
     :v_node_ids
   , :v_parent_node_ids
@@ -334,4 +364,5 @@ BEGIN
   , pos
   , len
   );
+  
 END;
