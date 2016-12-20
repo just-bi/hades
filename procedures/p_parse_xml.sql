@@ -237,8 +237,17 @@ BEGIN
     v_atts = null;
     
     if v_token is null then 
-      signal sql_error_code 10000
-      set message_text = 'No token found at '||cast(v_index as varchar(12));
+      -- check for whitespace trailing the document
+      select substr_regexpr('\s+$' flag RX_FLAG in :p_xml from v_index)
+      into v_token
+      from dummy;
+      if length(v_token) > 0 then
+        v_index = v_index + length(v_token);
+        v_node_type = 0;
+      else
+        signal sql_error_code 10000
+          set message_text = 'No token found at '||cast(v_index as varchar(12));
+      end if;
     elseif left(v_token, RX_LT_LEN) = RX_LT then
       if substr(v_token, 2, 1) = '?' then
         v_node_type = PROCESSING_INSTRUCTION_NODE;
